@@ -36,6 +36,8 @@ namespace K12.Report.ExamFailStudentReport.DAO
             sb.Append(" on te_include.ref_exam_id = exam.id");
             sb.Append(" where class.id in ('"+string.Join("','", ClassIdList.ToArray())+"')");
             sb.Append(" and course.ref_exam_template_id is not NULL");
+            sb.Append(" and course.school_year is not NULL");
+            sb.Append(" and course.semester is not NULL");
             sb.Append(" and te_include.ref_exam_id is not NULL");
             sb.Append(" and student.status = '" + _StudentSatus + "'");
             sb.Append(" group by ref_exam_id, exam.exam_name, course.school_year, course.semester, exam.display_order");

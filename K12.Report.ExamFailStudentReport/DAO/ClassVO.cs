@@ -97,6 +97,7 @@ namespace K12.Report.ExamFailStudentReport.DAO
             if(!AllCourseListDic.Keys.Contains(CourseId))
             {
                 AllCourseListDic.Add(CourseId, CourseObj);
+                if (Global.IsDebug) Console.WriteLine(StudentObj.ClassName + " " + CourseObj.CourseName);
             }
         }
     }

@@ -18,22 +18,22 @@ namespace K12.Report.ExamFailStudentReport.Forms
         List<string> _ClassIdList;
         List<DAO.ClassVO> _ClassList;
 
-        Dictionary<string, DAO.StudentVO> _MultiTagStudentDic = new Dictionary<string, DAO.StudentVO>();
-        Dictionary<string, string> _AllCourseDic = new Dictionary<string, string>();
-        DAO.ConfigureRecord _Configure;
+        // 是否要處理有雙重及格標準
         bool _IsProcessWarningStudent = true;
-
-        //private static readonly string _DefaultTagName = "預設";
-        //private static readonly decimal _DefaultPassScore = 60;
-        //private static readonly string _Title = "評量成績未達標準名單";
-        //private static readonly bool IsDebug = false;
-
+        // 雙重及格標準學生
+        Dictionary<string, DAO.StudentVO> _MultiTagStudentDic = new Dictionary<string, DAO.StudentVO>();
+        // 未達百分比
         decimal _PassRate = 50;
+        // 目前畫面選的試別
         DAO.ExamVO _ExamObj;
+        // 畫面設定
+        DAO.ConfigureRecord _Configure;
         // 取得所有學生的所有課程分數
         BackgroundWorker _BGW_Step1 = new BackgroundWorker();
         // 計算不及格學生
         BackgroundWorker _BGW_Step2 = new BackgroundWorker();
+        // 取得所有試別
+        BackgroundWorker _BGW_ExamList = new BackgroundWorker();
 
         #region Excel用的
         int _ListRowIndex = 0;
@@ -67,8 +67,6 @@ namespace K12.Report.ExamFailStudentReport.Forms
             InitializeComponent();
             this.Text = Global.Title;
             _ClassIdList = K12.Presentation.NLDPanels.Class.SelectedSource;
-            // TODO, 看能不能改成多執行緒
-            _ExamList = DAO.FDQuery.GetDistincExamList(_ClassIdList);
 
             // set default value
             _Configure = new DAO.ConfigureRecord();
@@ -83,14 +81,24 @@ namespace K12.Report.ExamFailStudentReport.Forms
 
         private void FrmExamFailCondition_Load(object sender, EventArgs e)
         {
-            
-            SetComponentValue();
-
+            _BGW_Step1.WorkerReportsProgress = true;
             _BGW_Step1.DoWork += new DoWorkEventHandler(BGW_DoWork_Step1);
             _BGW_Step1.RunWorkerCompleted += new RunWorkerCompletedEventHandler(BGW_RunWorkerCompleted_Step1);
+            _BGW_Step1.ProgressChanged += new ProgressChangedEventHandler(BGW_ProgressChanged);
 
+            _BGW_Step2.WorkerReportsProgress = true;
             _BGW_Step2.DoWork += new DoWorkEventHandler(BGW_DoWork_Step2);
             _BGW_Step2.RunWorkerCompleted += new RunWorkerCompletedEventHandler(BGW_RunWorkerCompleted_Step2);
+            _BGW_Step2.ProgressChanged += new ProgressChangedEventHandler(BGW_ProgressChanged);
+
+            _BGW_ExamList.DoWork += new DoWorkEventHandler(BGW_DoWork_ExamList);
+            _BGW_ExamList.RunWorkerCompleted += new RunWorkerCompletedEventHandler(BGW_RunWorkerCompleted_ExamList);
+
+            FormComponetEnable(false);
+            this.Loading.Visible = true;
+            this.Loading.IsRunning = true;
+            _BGW_ExamList.RunWorkerAsync();
+
         }
 
         private void cboSchoolYear_SelectedIndexChanged(object sender, EventArgs e)
@@ -107,12 +115,7 @@ namespace K12.Report.ExamFailStudentReport.Forms
         {
             FormComponetEnable(false);
 
-            if (CheckData() == false)
-            {
-                MsgBox.Show("還有條件尚未選擇!");
-                FormComponetEnable(true);
-                return;
-            }
+            if (CheckData() == false) return;
 
             SaveConfigure();
 
@@ -141,26 +144,43 @@ namespace K12.Report.ExamFailStudentReport.Forms
         }
 
         #region 背景執行緒方法
+        #region BGW _ExamList
+        // 主要邏輯區塊
+        void BGW_DoWork_ExamList(object sender, DoWorkEventArgs e)
+        {
+            _ExamList = DAO.FDQuery.GetDistincExamList(_ClassIdList);
+        }
+
+        // 當背景程式結束, 就會呼叫method
+        void BGW_RunWorkerCompleted_ExamList(object sender, RunWorkerCompletedEventArgs e)
+        {
+            this.Loading.Visible = false;
+            FormComponetEnable(true);
+            SetComponentValue();
+        }
+        #endregion
 
         #region BGW Step1
         // 主要邏輯區塊
         void BGW_DoWork_Step1(object sender, DoWorkEventArgs e)
         {
-
             string fileName = (string)((object[])e.Argument)[0];
 
             // 取得學生所有修課的成績, 包括學生自己的特殊計算規則假如有的話
             Dictionary<string, DAO.ClassVO> ClassListDic = DAO.FDQuery.GetAllStudentScore(_ClassIdList, _ExamObj);
+            _BGW_Step1.ReportProgress(10);
 
             // 取得學生類別
             DAO.FDQuery.GetAllStudentTag(ClassListDic, _ClassIdList);
 
             // 取得班級計分規則
             DAO.FDQuery.GetAllClassCalRule(ClassListDic, _ClassIdList);
+            _BGW_Step1.ReportProgress(20);
 
             // 班級排序
             _ClassList = ClassListDic.Values.ToList();
             _ClassList.Sort(SortClass);
+            _BGW_Step1.ReportProgress(30);
 
             // 排序學生
             foreach (DAO.ClassVO obj in _ClassList)
@@ -217,7 +237,9 @@ namespace K12.Report.ExamFailStudentReport.Forms
             }
             #endregion
 
-            
+
+            _BGW_Step1.ReportProgress(50);
+
             e.Result = new object[] { fileName };
             
         }
@@ -262,6 +284,11 @@ namespace K12.Report.ExamFailStudentReport.Forms
             if (IsContinue == true)
             {
                 _BGW_Step2.RunWorkerAsync(new object[] { fileName });
+            }
+            else
+            {
+                FormComponetEnable(true);
+                FISCA.Presentation.MotherForm.SetStatusBarMessage(Global.Title + "產生取消。", 100);
             }
         }
         #endregion
@@ -317,6 +344,8 @@ namespace K12.Report.ExamFailStudentReport.Forms
             }   // end of 計算學生的學分數
             #endregion
 
+            _BGW_Step2.ReportProgress(60);
+
             // 輸出到Excel
             #region 輸出到Excel
             Workbook report = new Workbook();
@@ -335,6 +364,7 @@ namespace K12.Report.ExamFailStudentReport.Forms
             Cells DetailCells = sheetDetail.Cells;
 
             OutListTitle(ListCells);
+            _BGW_Step2.ReportProgress(70);
 
             foreach (DAO.ClassVO ClassObj in _ClassList)
             {
@@ -358,6 +388,7 @@ namespace K12.Report.ExamFailStudentReport.Forms
             // for test
             if (Global.IsDebug) OutRowData(report);
 
+            _BGW_Step2.ReportProgress(90);
             // 儲存結果
             e.Result = new object[] { report, fileName, _DetailRowIndex > _MAX_ROW_COUNT };
         }
@@ -433,6 +464,8 @@ namespace K12.Report.ExamFailStudentReport.Forms
                 if (overLimit)
                     MsgBox.Show("匯出資料已經超過Excel的極限(65536筆)。\n超出的資料無法被匯出。\n\n請減少選取學生人數。");
 
+                FISCA.Presentation.MotherForm.SetStatusBarMessage( Global.Title + "產生完成。", 100);
+
                 System.Diagnostics.Process.Start(path);
             }
             else
@@ -442,6 +475,11 @@ namespace K12.Report.ExamFailStudentReport.Forms
         }
         #endregion
 
+        void BGW_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            FISCA.Presentation.MotherForm.SetStatusBarMessage( Global.Title + "產生中", e.ProgressPercentage );
+        }
+        
         #endregion
 
         #region Excel輸出方法
@@ -481,21 +519,28 @@ namespace K12.Report.ExamFailStudentReport.Forms
             int columnIndex = 0;
             // 先複製格式
             Range TitleRange = cells.CreateRange(_DetailRowIndex, columnIndex, 3, _Default_Detail_Column);
-            TitleRange.Copy(_Detail_Title_Range);
+            TitleRange.CopyStyle(_Detail_Title_Range);
 
             // 設定高度
             cells.SetRowHeightPixel(_DetailRowIndex, _Detail_Row_Height[0]);
             cells.SetRowHeightPixel((_DetailRowIndex+1), _Detail_Row_Height[1]);
             cells.SetRowHeightPixel((_DetailRowIndex+2), _Detail_Row_Height[2]);
             
+            // 合併儲存格
+            cells.Merge(_DetailRowIndex, columnIndex, 1, _Default_Detail_Column);
+
             // 輸出資料
             columnIndex = 0;
             string title = K12.Data.School.ChineseName + " " + ClassObj.ClassName + "  " + _ExamObj.ExameName + " 未達" + _PassRate + "%學分名單";
             cells[_DetailRowIndex, columnIndex++].PutValue(title);
 
-            // 國文Ⅳ	英文Ⅳ	...
             _DetailRowIndex++;
-            columnIndex = 3;
+            columnIndex = 0;
+            SetDetailColumnValue(cells, columnIndex++, "座號", _Detail_Style_Normal);
+            SetDetailColumnValue(cells, columnIndex++, "姓名", _Detail_Style_Normal);
+            SetDetailColumnValue(cells, columnIndex++, "學號", _Detail_Style_Normal);
+
+            // 國文Ⅳ	英文Ⅳ	...
             int CourseIndex = 0;
             _Current_Course_Count = 0;
             foreach(DAO.CourseVO CourseObj in ClassObj.AllCourseListDic.Values)
@@ -506,24 +551,23 @@ namespace K12.Report.ExamFailStudentReport.Forms
                 _Current_Course_Count++;
             }
 
-            if (_Current_Course_Count > _Default_Detail_Course_Count)
-            {
-                int StartColumn = columnIndex;
-                SetDetailColumnValue(cells, columnIndex++, "及格標準", _Detail_Style_Normal);
-                SetDetailColumnValue(cells, columnIndex++, "應得學分數", _Detail_Style_Normal);
-                SetDetailColumnValue(cells, columnIndex++, "實得學分數", _Detail_Style_Normal);
-                SetDetailColumnValue(cells, columnIndex++, "及格百分比", _Detail_Style_Normal);
+            columnIndex = ( (_Current_Course_Count < _Default_Detail_Course_Count) ? _Default_Detail_Course_Count : _Current_Course_Count) + 3;
 
-                _DetailRowIndex++;
-                SetDetailColumnValue(cells, StartColumn++, "", _Detail_Style_Normal);
-                SetDetailColumnValue(cells, StartColumn++, "", _Detail_Style_Normal);
-                SetDetailColumnValue(cells, StartColumn++, "", _Detail_Style_Normal);
-                SetDetailColumnValue(cells, StartColumn++, "", _Detail_Style_Normal);
-                _DetailRowIndex--;
-            }
-            
+            int StartColumn = columnIndex;
+            SetDetailColumnValue(cells, columnIndex++, "及格標準", _Detail_Style_Normal);
+            SetDetailColumnValue(cells, columnIndex++, "應得學分數", _Detail_Style_Normal);
+            SetDetailColumnValue(cells, columnIndex++, "實得學分數", _Detail_Style_Normal);
+            SetDetailColumnValue(cells, columnIndex++, "及格百分比", _Detail_Style_Normal);
+
             // 學分數 
             _DetailRowIndex++;
+            columnIndex = 0;
+
+            SetDetailColumnValue(cells, columnIndex, "學分數", _Detail_Style_Normal);
+            
+            // 合併儲存格
+            cells.Merge(_DetailRowIndex, columnIndex, 1, 3);
+
             columnIndex = 3;
             CourseIndex = 0;
             foreach (DAO.CourseVO CourseObj in ClassObj.AllCourseListDic.Values)
@@ -531,6 +575,12 @@ namespace K12.Report.ExamFailStudentReport.Forms
                 SetDetailColumnValue(cells, columnIndex++, CourseObj.Credit, _Detail_Style_Normal);
                 CourseIndex++;
             }
+
+            SetDetailColumnValue(cells, StartColumn++, "", _Detail_Style_Normal);
+            SetDetailColumnValue(cells, StartColumn++, "", _Detail_Style_Normal);
+            SetDetailColumnValue(cells, StartColumn++, "", _Detail_Style_Normal);
+            SetDetailColumnValue(cells, StartColumn++, "", _Detail_Style_Normal);
+
         }
 
         private void OutDetailData(Cells cells, DAO.ClassVO ClassObj, DAO.StudentVO StudentObj)
@@ -563,7 +613,6 @@ namespace K12.Report.ExamFailStudentReport.Forms
                     if (StuCourseObj.CourseScore == -1)
                     {
                         // 有這堂課, 卻沒有分數
-                        cells[_DetailRowIndex, columnIndex++].PutValue(_NoScroe);
                         SetDetailColumnValue(cells, columnIndex++, _NoScroe, _Detail_Style_Red);
                     }
                     else
@@ -620,7 +669,7 @@ namespace K12.Report.ExamFailStudentReport.Forms
 
             // 先產生空白列
             Range range = cells.CreateRange(_ListRowIndex, columnIndex, 1, _MAX_List_Column);
-            range.Copy(_List_Row_Range);
+            range.CopyStyle(_List_Row_Range);
 
             // 設定高度
             cells.SetRowHeightPixel(_ListRowIndex, _List_Row_Height);
@@ -776,15 +825,31 @@ namespace K12.Report.ExamFailStudentReport.Forms
         private bool CheckData()
         {
             bool IsPass = true;
+            string msg = "";
 
             if (this.cboSchoolYear.SelectedIndex < 0)
-                return false;
+            {
+                msg = "請選擇學年度!";
+                IsPass = false;
+            }
 
             if (this.cboSemester.SelectedIndex < 0)
-                return false;
+            {
+                msg = "請選擇學期!";
+                IsPass = false;
+            }
 
             if (this.cboExamList.SelectedIndex <= 0)
-                return false;
+            {
+                msg = "請選擇試別!";
+                IsPass = false;
+            }
+
+            if (IsPass == false)
+            {
+                MsgBox.Show(msg);
+                FormComponetEnable(true);
+            }
 
             return IsPass;
         }
@@ -824,8 +889,8 @@ namespace K12.Report.ExamFailStudentReport.Forms
             seatno1 += obj1.ClassName.PadLeft(20, '0');             // 班級名稱
 
             string seatno2 = obj2.ClassGradeYear.PadLeft(1, '0');   // 年級
-            seatno1 += obj2.ClassDisplyOrder.PadLeft(3, '0');       // 班級序號
-            seatno1 += obj2.ClassName.PadLeft(20, '0');             // 班級名稱
+            seatno2 += obj2.ClassDisplyOrder.PadLeft(3, '0');       // 班級序號
+            seatno2 += obj2.ClassName.PadLeft(20, '0');             // 班級名稱
 
             return seatno1.CompareTo(seatno2);
         }

@@ -39,6 +39,7 @@
             this.btnClose = new DevComponents.DotNetBar.ButtonX();
             this.cboSchoolYear = new DevComponents.DotNetBar.Controls.ComboBoxEx();
             this.iiPassRate = new DevComponents.Editors.IntegerInput();
+            this.Loading = new DevComponents.DotNetBar.Controls.CircularProgress();
             ((System.ComponentModel.ISupportInitialize)(this.iiPassRate)).BeginInit();
             this.SuspendLayout();
             // 
@@ -194,11 +195,26 @@
             this.iiPassRate.TabIndex = 4;
             this.iiPassRate.Value = 1;
             // 
+            // Loading
+            // 
+            this.Loading.BackColor = System.Drawing.Color.Transparent;
+            // 
+            // 
+            // 
+            this.Loading.BackgroundStyle.Class = "";
+            this.Loading.BackgroundStyle.CornerType = DevComponents.DotNetBar.eCornerType.Square;
+            this.Loading.Location = new System.Drawing.Point(129, 53);
+            this.Loading.Name = "Loading";
+            this.Loading.Size = new System.Drawing.Size(64, 45);
+            this.Loading.Style = DevComponents.DotNetBar.eDotNetBarStyle.OfficeXP;
+            this.Loading.TabIndex = 9;
+            // 
             // FrmExamFailCondition
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(323, 151);
+            this.Controls.Add(this.Loading);
             this.Controls.Add(this.iiPassRate);
             this.Controls.Add(this.cboSchoolYear);
             this.Controls.Add(this.btnClose);
@@ -232,5 +248,6 @@
         private DevComponents.DotNetBar.ButtonX btnClose;
         private DevComponents.DotNetBar.Controls.ComboBoxEx cboSchoolYear;
         private DevComponents.Editors.IntegerInput iiPassRate;
+        private DevComponents.DotNetBar.Controls.CircularProgress Loading;
     }
 }
