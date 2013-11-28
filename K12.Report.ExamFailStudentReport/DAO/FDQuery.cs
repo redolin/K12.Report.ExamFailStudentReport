@@ -40,7 +40,7 @@ namespace K12.Report.ExamFailStudentReport.DAO
             sb.Append(" and student.status = '" + _StudentSatus + "'");
             sb.Append(" group by ref_exam_id, exam.exam_name, course.school_year, course.semester, exam.display_order");
             sb.Append(" order by course.school_year, course.semester, exam.display_order");
-            Console.WriteLine("[GetDistincExamList] sql: ["+sb.ToString()+"]");
+            if (Global.IsDebug) Console.WriteLine("[GetDistincExamList] sql: [" + sb.ToString() + "]");
 
             QueryHelper qh = new QueryHelper();
             DataTable dt = qh.Select(sb.ToString());
@@ -96,7 +96,7 @@ namespace K12.Report.ExamFailStudentReport.DAO
             sb.Append(" and course.school_year = '" + exam.SchoolYear + "'");
             sb.Append(" and course.semester = '" + exam.Semester + "'");
             sb.Append(" and te_include.ref_exam_id = '" + exam.ExamId + "'");
-            Console.WriteLine("[GetAllStudentScore] sql: [" + sb.ToString() + "]");
+            if (Global.IsDebug) Console.WriteLine("[GetAllStudentScore] sql: [" + sb.ToString() + "]");
 
             QueryHelper qh = new QueryHelper();
             DataTable dt = qh.Select(sb.ToString());
@@ -137,7 +137,7 @@ namespace K12.Report.ExamFailStudentReport.DAO
             sb.Append(" left join score_calc_rule");
             sb.Append(" on class.ref_score_calc_rule_id=score_calc_rule.id");
             sb.Append(" where class.id in ('" + string.Join("','", ClassIdList.ToArray()) + "')");
-            Console.WriteLine("[GetClassCalRule] sql: [" + sb.ToString() + "]");
+            if (Global.IsDebug) Console.WriteLine("[GetClassCalRule] sql: [" + sb.ToString() + "]");
 
             QueryHelper qh = new QueryHelper();
             DataTable dt = qh.Select(sb.ToString());
@@ -184,7 +184,7 @@ namespace K12.Report.ExamFailStudentReport.DAO
             sb.Append(" on tag_student.ref_tag_id = tag.id");
             sb.Append(" where class.id in ('" + string.Join("','", ClassIdList.ToArray()) + "')");
             sb.Append(" and student.status = '" + _StudentSatus + "'");
-            Console.WriteLine("[GetAllStudentTag] sql: [" + sb.ToString() + "]");
+            if (Global.IsDebug) Console.WriteLine("[GetAllStudentTag] sql: [" + sb.ToString() + "]");
 
             QueryHelper qh = new QueryHelper();
             DataTable dt = qh.Select(sb.ToString());

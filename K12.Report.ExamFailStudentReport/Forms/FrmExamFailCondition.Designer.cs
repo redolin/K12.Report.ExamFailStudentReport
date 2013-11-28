@@ -64,7 +64,7 @@
             // 
             this.labelX2.BackgroundStyle.Class = "";
             this.labelX2.BackgroundStyle.CornerType = DevComponents.DotNetBar.eCornerType.Square;
-            this.labelX2.Location = new System.Drawing.Point(169, 14);
+            this.labelX2.Location = new System.Drawing.Point(185, 14);
             this.labelX2.Name = "labelX2";
             this.labelX2.Size = new System.Drawing.Size(37, 23);
             this.labelX2.TabIndex = 2;
@@ -76,7 +76,7 @@
             this.cboSemester.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
             this.cboSemester.FormattingEnabled = true;
             this.cboSemester.ItemHeight = 19;
-            this.cboSemester.Location = new System.Drawing.Point(215, 13);
+            this.cboSemester.Location = new System.Drawing.Point(231, 13);
             this.cboSemester.Name = "cboSemester";
             this.cboSemester.Size = new System.Drawing.Size(65, 25);
             this.cboSemester.Style = DevComponents.DotNetBar.eDotNetBarStyle.StyleManagerControlled;
@@ -103,7 +103,7 @@
             this.cboExamList.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
             this.cboExamList.FormattingEnabled = true;
             this.cboExamList.ItemHeight = 19;
-            this.cboExamList.Location = new System.Drawing.Point(73, 47);
+            this.cboExamList.Location = new System.Drawing.Point(89, 47);
             this.cboExamList.Name = "cboExamList";
             this.cboExamList.Size = new System.Drawing.Size(207, 25);
             this.cboExamList.Style = DevComponents.DotNetBar.eDotNetBarStyle.StyleManagerControlled;
@@ -119,9 +119,9 @@
             this.labelX4.BackgroundStyle.CornerType = DevComponents.DotNetBar.eCornerType.Square;
             this.labelX4.Location = new System.Drawing.Point(14, 83);
             this.labelX4.Name = "labelX4";
-            this.labelX4.Size = new System.Drawing.Size(61, 23);
+            this.labelX4.Size = new System.Drawing.Size(77, 23);
             this.labelX4.TabIndex = 6;
-            this.labelX4.Text = "及格比例";
+            this.labelX4.Text = "未達百分比";
             // 
             // labelX5
             // 
@@ -131,7 +131,7 @@
             // 
             this.labelX5.BackgroundStyle.Class = "";
             this.labelX5.BackgroundStyle.CornerType = DevComponents.DotNetBar.eCornerType.Square;
-            this.labelX5.Location = new System.Drawing.Point(133, 83);
+            this.labelX5.Location = new System.Drawing.Point(149, 83);
             this.labelX5.Name = "labelX5";
             this.labelX5.Size = new System.Drawing.Size(27, 23);
             this.labelX5.TabIndex = 8;
@@ -142,7 +142,7 @@
             this.btnPrint.AccessibleRole = System.Windows.Forms.AccessibleRole.PushButton;
             this.btnPrint.BackColor = System.Drawing.Color.Transparent;
             this.btnPrint.ColorTable = DevComponents.DotNetBar.eButtonColor.OrangeWithBackground;
-            this.btnPrint.Location = new System.Drawing.Point(138, 120);
+            this.btnPrint.Location = new System.Drawing.Point(155, 116);
             this.btnPrint.Name = "btnPrint";
             this.btnPrint.Size = new System.Drawing.Size(75, 23);
             this.btnPrint.Style = DevComponents.DotNetBar.eDotNetBarStyle.StyleManagerControlled;
@@ -155,7 +155,7 @@
             this.btnClose.AccessibleRole = System.Windows.Forms.AccessibleRole.PushButton;
             this.btnClose.BackColor = System.Drawing.Color.Transparent;
             this.btnClose.ColorTable = DevComponents.DotNetBar.eButtonColor.OrangeWithBackground;
-            this.btnClose.Location = new System.Drawing.Point(219, 120);
+            this.btnClose.Location = new System.Drawing.Point(236, 116);
             this.btnClose.Name = "btnClose";
             this.btnClose.Size = new System.Drawing.Size(75, 23);
             this.btnClose.Style = DevComponents.DotNetBar.eDotNetBarStyle.StyleManagerControlled;
@@ -169,7 +169,7 @@
             this.cboSchoolYear.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
             this.cboSchoolYear.FormattingEnabled = true;
             this.cboSchoolYear.ItemHeight = 19;
-            this.cboSchoolYear.Location = new System.Drawing.Point(73, 13);
+            this.cboSchoolYear.Location = new System.Drawing.Point(89, 13);
             this.cboSchoolYear.Name = "cboSchoolYear";
             this.cboSchoolYear.Size = new System.Drawing.Size(87, 25);
             this.cboSchoolYear.Style = DevComponents.DotNetBar.eDotNetBarStyle.StyleManagerControlled;
@@ -185,7 +185,7 @@
             this.iiPassRate.BackgroundStyle.Class = "DateTimeInputBackground";
             this.iiPassRate.BackgroundStyle.CornerType = DevComponents.DotNetBar.eCornerType.Square;
             this.iiPassRate.ButtonFreeText.Shortcut = DevComponents.DotNetBar.eShortcut.F2;
-            this.iiPassRate.Location = new System.Drawing.Point(73, 83);
+            this.iiPassRate.Location = new System.Drawing.Point(89, 83);
             this.iiPassRate.MaxValue = 99;
             this.iiPassRate.MinValue = 1;
             this.iiPassRate.Name = "iiPassRate";
@@ -198,7 +198,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(309, 151);
+            this.ClientSize = new System.Drawing.Size(323, 151);
             this.Controls.Add(this.iiPassRate);
             this.Controls.Add(this.cboSchoolYear);
             this.Controls.Add(this.btnClose);
