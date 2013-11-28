@@ -774,7 +774,7 @@ namespace K12.Report.ExamFailStudentReport.Forms
                 }
             }
 
-            for (int intI = 1; intI <= this.cboExamList.Items.Count; intI++)
+            for (int intI = 1; intI < this.cboExamList.Items.Count; intI++)
             {
                 DAO.ExamVO ExamObj = this.cboExamList.Items[intI] as DAO.ExamVO;
 
@@ -860,10 +860,12 @@ namespace K12.Report.ExamFailStudentReport.Forms
         {
             // 取得設定
             List<DAO.ConfigureRecord> ConfList = DAO.Configure.SelectConfigure();
-            if (ConfList.Count > 0)
+            if (ConfList.Count == 0)
             {
-                _Configure = ConfList[0];
+                DAO.Configure.InsertByRecord(_Configure);
+                ConfList = DAO.Configure.SelectConfigure();
             }
+            _Configure = ConfList[0];
         }
 
         private void SaveConfigure()
