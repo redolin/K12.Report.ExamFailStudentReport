@@ -111,6 +111,11 @@ namespace K12.Report.ExamFailStudentReport.Forms
             ShowExamList();
         }
 
+        private void btnClose_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
         private void btnPrint_Click(object sender, EventArgs e)
         {
             FormComponetEnable(false);
@@ -138,20 +143,15 @@ namespace K12.Report.ExamFailStudentReport.Forms
             
         }
 
-        private void btnClose_Click(object sender, EventArgs e)
-        {
-            this.Close();
-        }
-
         #region 背景執行緒方法
         #region BGW _ExamList
-        // 主要邏輯區塊
+        // 取得不重複的試別列表
         void BGW_DoWork_ExamList(object sender, DoWorkEventArgs e)
         {
             _ExamList = DAO.FDQuery.GetDistincExamList(_ClassIdList);
         }
 
-        // 當背景程式結束, 就會呼叫method
+        // 產生畫面的資料
         void BGW_RunWorkerCompleted_ExamList(object sender, RunWorkerCompletedEventArgs e)
         {
             this.Loading.Visible = false;
@@ -161,7 +161,7 @@ namespace K12.Report.ExamFailStudentReport.Forms
         #endregion
 
         #region BGW Step1
-        // 主要邏輯區塊
+        // 儲存所有學生的所有課程分數, 跟及格標準
         void BGW_DoWork_Step1(object sender, DoWorkEventArgs e)
         {
             string fileName = (string)((object[])e.Argument)[0];
@@ -244,7 +244,7 @@ namespace K12.Report.ExamFailStudentReport.Forms
             
         }
 
-        // 當背景程式結束, 就會呼叫method
+        // 判斷有沒有兩個以上的及格標準
         void BGW_RunWorkerCompleted_Step1(object sender, RunWorkerCompletedEventArgs e)
         {
             string fileName = (string)((object[])e.Result)[0];
@@ -294,6 +294,7 @@ namespace K12.Report.ExamFailStudentReport.Forms
         #endregion
 
         #region BGW Step2
+        // 計算所有學生應得/實得的學分數跟比例, 並輸出到Excel
         void BGW_DoWork_Step2(object sender, DoWorkEventArgs e)
         {
             string fileName = (string)((object[])e.Argument)[0];
@@ -368,6 +369,8 @@ namespace K12.Report.ExamFailStudentReport.Forms
 
             foreach (DAO.ClassVO ClassObj in _ClassList)
             {
+                if (ClassObj.EaxmFailStudentList.Count <= 0) continue;
+
                 // 輸出Detail表頭
                 OutDetailTitle(DetailCells, ClassObj);
 
@@ -393,6 +396,7 @@ namespace K12.Report.ExamFailStudentReport.Forms
             e.Result = new object[] { report, fileName, _DetailRowIndex > _MAX_ROW_COUNT };
         }
 
+        // 儲存Excel
         void BGW_RunWorkerCompleted_Step2(object sender, RunWorkerCompletedEventArgs e)
         {
             FormComponetEnable(true);
@@ -483,20 +487,24 @@ namespace K12.Report.ExamFailStudentReport.Forms
         #endregion
 
         #region Excel輸出方法
+        // 準備Excel的Style
         private void GetExcelStyle(Workbook wb)
         {
             Cells ListCells = wb.Worksheets[_SheetListName].Cells;
             Cells DetailCells = wb.Worksheets[_SheetDetailName].Cells;
 
-            
+            // 取得 "成績明細" 中正常的Style
             _Detail_Style_Normal = DetailCells[3, 0].Style;
+            // 取得 "成績明細" 中不正常的Style (紅色的字體)
             _Detail_Style_Red = DetailCells[3, 1].Style;
             // 取完Style之後, 改為正常的
             DetailCells[3, 1].Style = _Detail_Style_Normal;
 
+            // 複製 "總表" 中第一列, 準備之後輸出時複製Style用
             _List_Row_Range = ListCells.CreateRange(_List_Row_Range_Cell[0], _List_Row_Range_Cell[1]);
+
+            // 複製 "成績明細" 中的標題, 準備之後輸出時複製Style用
             _Detail_Title_Range = DetailCells.CreateRange(_Detail_Title_Range_Cell[0], _Detail_Title_Range_Cell[1]);
-            // _Detail_Row_Range = DetailCells.CreateRange(_Detail_Row_Range_Cell[0], _Detail_Row_Range_Cell[1]);
         }
 
         #region 針對"成績明細"的處理
@@ -540,7 +548,7 @@ namespace K12.Report.ExamFailStudentReport.Forms
             SetDetailColumnValue(cells, columnIndex++, "姓名", _Detail_Style_Normal);
             SetDetailColumnValue(cells, columnIndex++, "學號", _Detail_Style_Normal);
 
-            // 國文Ⅳ	英文Ⅳ	...
+            // 課程名稱, 國文Ⅳ	英文Ⅳ	...
             int CourseIndex = 0;
             _Current_Course_Count = 0;
             foreach(DAO.CourseVO CourseObj in ClassObj.AllCourseListDic.Values)
@@ -551,7 +559,10 @@ namespace K12.Report.ExamFailStudentReport.Forms
                 _Current_Course_Count++;
             }
 
-            columnIndex = ( (_Current_Course_Count < _Default_Detail_Course_Count) ? _Default_Detail_Course_Count : _Current_Course_Count) + 3;
+            // 假如印出的課程, 超過預設課程數量, 則下一個columnIndex就用超出的課程數量
+            // 假如沒有超過預設的課程數量, 就用預設的課程數量當作columnIndex
+            // always +3, 因為前面有"座號" "姓名" "學號"
+            columnIndex = ( (_Current_Course_Count < _Default_Detail_Course_Count)? _Default_Detail_Course_Count : _Current_Course_Count ) + 3;
 
             int StartColumn = columnIndex;
             SetDetailColumnValue(cells, columnIndex++, "及格標準", _Detail_Style_Normal);
@@ -569,13 +580,12 @@ namespace K12.Report.ExamFailStudentReport.Forms
             cells.Merge(_DetailRowIndex, columnIndex, 1, 3);
 
             columnIndex = 3;
-            CourseIndex = 0;
             foreach (DAO.CourseVO CourseObj in ClassObj.AllCourseListDic.Values)
             {
                 SetDetailColumnValue(cells, columnIndex++, CourseObj.Credit, _Detail_Style_Normal);
-                CourseIndex++;
             }
 
+            // 及格標準, 應得學分數, 實得學分數, 及格百分比
             SetDetailColumnValue(cells, StartColumn++, "", _Detail_Style_Normal);
             SetDetailColumnValue(cells, StartColumn++, "", _Detail_Style_Normal);
             SetDetailColumnValue(cells, StartColumn++, "", _Detail_Style_Normal);
@@ -585,21 +595,22 @@ namespace K12.Report.ExamFailStudentReport.Forms
 
         private void OutDetailData(Cells cells, DAO.ClassVO ClassObj, DAO.StudentVO StudentObj)
         {
+            
+            if (_DetailRowIndex > _MAX_ROW_COUNT) return;
+
             int columnIndex = 0;
             _DetailRowIndex++;
 
-            if (_DetailRowIndex > _MAX_ROW_COUNT)
-                return;
             // 設定高度
             cells.SetRowHeightPixel(_DetailRowIndex, _Detail_Row_Height[3]);
 
-            // 座號	姓名	學號	國文Ⅳ	英文Ⅳ	... 及格標準	應得學分數	實得學分數	未達百分比
+            // 座號	姓名	學號
             SetDetailColumnValue(cells, columnIndex++, StudentObj.SeatNo, _Detail_Style_Normal);
             SetDetailColumnValue(cells, columnIndex++, StudentObj.StudentName, _Detail_Style_Normal);
             SetDetailColumnValue(cells, columnIndex++, StudentObj.StudentNumber, _Detail_Style_Normal);
 
             #region 輸出每一科的分數
-            int CourseIndex = 0;
+            // 國文Ⅳ	英文Ⅳ	... 
             foreach (DAO.CourseVO CourseObj in ClassObj.AllCourseListDic.Values)
             {
                 DAO.CourseVO StuCourseObj = Utility.FindCourse(StudentObj.CourseListDic.Values.ToList(), CourseObj.CourseId);
@@ -623,16 +634,16 @@ namespace K12.Report.ExamFailStudentReport.Forms
                             SetDetailColumnValue(cells, columnIndex++, StuCourseObj.CourseScore, _Detail_Style_Red);
                     }
                 }
-
-                CourseIndex++;
             }
             #endregion
 
+            // 假如印出的課程小於預設的課程數量, 就把剩下的欄位補上Style(邊框)
             for (int intI = 0; intI < (_Default_Detail_Course_Count - _Current_Course_Count); intI++)
             {
                 SetDetailColumnValue(cells, columnIndex++, "", _Detail_Style_Normal);
             }
 
+            // 及格標準	應得學分數	實得學分數	未達百分比
             SetDetailColumnValue(cells, columnIndex++, StudentObj.PassScore, _Detail_Style_Normal);
             SetDetailColumnValue(cells, columnIndex++, StudentObj.TotalCredit, _Detail_Style_Normal);
             SetDetailColumnValue(cells, columnIndex++, StudentObj.GotCredit, _Detail_Style_Normal);
